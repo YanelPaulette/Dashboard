@@ -1,0 +1,104 @@
+---
+title: "Dashboard"
+subtitle: ""
+author: "Yanel Paulette"
+date: "6/2/2022"
+output:
+  html_document:
+    theme: spacelab
+    toc: true
+    toc_float: true
+    code_folding: hide
+    code_download: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE , warning = FALSE, message = FALSE)
+```
+
+
+### Objetivos
+
+completar... 
+
+Te invitamos a acompañarnos!
+
+
+### Destinatarios
+
+
+conmpletar....
+
+El detalle procedimental utilizado en el presente documento, tiene como objetivo que pueda ser utilizado por quienes ya manejan programación en R, pero también  por quienes se están iniciando por ese camino. 
+
+Para quienes trabajan o conocen  la parte *HARD* de HR  *(Administración de personal / Payroll)*  sentirán familiares los pasos y conceptos. 
+
+Para quienes no lo estan, conocerán una alternativa que podría ser implementada en áreas  de HR con el fin de agregar valor a la función. 
+
+
+
+### Procedimiento
+
+A continuación, comenzamos a explicar el paso a paso  para realizar la limpieza y organización de los datos, según los objetivos presentados. 
+
+Para comenzar, se deben realizar configuraciones iniciales, las cuales iremos detallando a continuación. 
+
+Incorporamos las librerias a utilizar.
+
+```{r}
+
+library(tidyverse)      
+#library(googlesheets4)  
+library(gargle)         
+library(funModeling)    
+library(kableExtra)
+#library(tm)
+#library(lubridate) 
+#library(datos)
+#library( hms)
+```
+
+Creamos objetos que vamos a utlizar en diversas oportunidades y solo debemos invocarlos.
+
+```{r }
+
+azul <- "#344D7E"
+
+fuente <- "Fuente: Elaboración propia"
+```
+
+
+Incorporamos las bases de datos a utilizar.
+
+```{r}
+original <- read.csv("Data.csv", stringsAsFactors = TRUE)
+
+```
+
+
+Almacenamos los datos en  objeto para evitar usar la base original.
+
+```{r}
+d1<- original
+
+```
+
+
+Demos un vistazo de lo que tenemos en el Dataframe.
+
+Con la función str, exploramos :
+
+
+```{recho=FALSE}
+str(original)
+```
+
+
+Con la función head, conocemos las columnas: 
+
+```{r  echo=FALSE}
+head(original)
+```
+
+
+
