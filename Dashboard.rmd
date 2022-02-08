@@ -13,7 +13,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE , warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = FALSE , warning = FALSE, message  = FALSE)
 ```
 
 
@@ -21,7 +21,6 @@ knitr::opts_chunk$set(echo = FALSE , warning = FALSE, message = FALSE)
 
 completar... 
 
-Te invitamos a acompañarnos!
 
 
 ### Destinatarios
@@ -30,11 +29,6 @@ Te invitamos a acompañarnos!
 conmpletar....
 
 El detalle procedimental utilizado en el presente documento, tiene como objetivo que pueda ser utilizado por quienes ya manejan programación en R, pero también  por quienes se están iniciando por ese camino. 
-
-Para quienes trabajan o conocen  la parte *HARD* de HR  *(Administración de personal / Payroll)*  sentirán familiares los pasos y conceptos. 
-
-Para quienes no lo estan, conocerán una alternativa que podría ser implementada en áreas  de HR con el fin de agregar valor a la función. 
-
 
 
 ### Procedimiento
@@ -45,7 +39,7 @@ Para comenzar, se deben realizar configuraciones iniciales, las cuales iremos de
 
 Incorporamos las librerias a utilizar.
 
-```{r}
+```{r }
 
 library(tidyverse)      
 #library(googlesheets4)  
@@ -63,6 +57,30 @@ Creamos objetos que vamos a utlizar en diversas oportunidades y solo debemos inv
 ```{r }
 
 azul <- "#344D7E"
+verde <-  "#4A9FC7"
+gris <- "#75838F"
+rosa1 <- "#B95192"
+rosa2 <- "#EE5777"
+naranja <- "#FF764C"
+amarillo <- "#FFA600"
+gris <- "#75838F"
+lila <- "#755395"
+
+
+# Estilo limpio con líneas de referencia verticales en gris claro
+estilov <- theme(panel.grid = element_blank(),
+                 plot.background = element_rect(fill = "#FBFCFC"),
+                 panel.background = element_blank(),
+                 panel.grid.major.x = element_line(color = "#AEB6BF"),
+                 text = element_text(family = "Roboto"))
+
+# Estilo limpio con líneas de referencia horizontales en gris claro
+estiloh <- theme(panel.grid = element_blank(),
+                 plot.background = element_rect(fill = "#FBFCFC"),
+                 panel.background = element_blank(),
+                 panel.grid.major.y = element_line(color = "#AEB6BF"),
+                 text = element_text(family = "Roboto"))
+
 
 fuente <- "Fuente: Elaboración propia"
 ```
@@ -79,12 +97,23 @@ original <- read.csv("Data.csv", stringsAsFactors = TRUE)
 Almacenamos los datos en  objeto para evitar usar la base original.
 
 ```{r}
+#rm(d1)
 d1<- original
 
 ```
 
 
 Demos un vistazo de lo que tenemos en el Dataframe.
+
+
+Usamos algunas funciones del paquete ´funmodeling´
+
+```{r}
+status(d1)
+
+```
+
+
 
 Con la función str, exploramos :
 
@@ -94,11 +123,356 @@ str(original)
 ```
 
 
-Con la función head, conocemos las columnas: 
+Comenzamos trabajando con los nombres de las columnas. Y consultamos los nombres de las mismas. 
 
-```{r  echo=FALSE}
-head(original)
+
+```{r}
+
+limpios <- make.names(colnames(d1))
+colnames(d1) <- limpios
+
+names(d1)
+
 ```
 
+Cambiamos los nombres de las columnas, para que sean en castellano y sean más facil de interpretar.
+
+```{r}
+#rm(d1)
+
+d1 <- d1%>% 
+  rename(
+  edad=  "ï..Age",
+  rotacion= "Attrition",
+  viaje_negocio="BusinessTravel",
+  tasa_diaria="DailyRate", 
+  departamento=Department,
+  distancia=DistanceFromHome,
+  educacion=Education,
+  especialidad=EducationField,
+  cuenta_empleado=EmployeeCount,
+  dotacion=EmployeeNumber,
+  clima=EnvironmentSatisfaction,
+  genero=Gender,
+  tasa_horaria=HourlyRate, 
+  participacion=JobInvolvement,
+  jerarquia=JobLevel,
+  puesto=JobRole,
+  satisfaccion=JobSatisfaction,
+  est_civil=MaritalStatus,
+  sueldo=MonthlyIncome,
+  tasa_sueldo=MonthlyRate,
+  companias_trabajadas=NumCompaniesWorked,
+  mayor_18=Over18,
+  hs_extras=OverTime,
+  aumento_porcentual= PercentSalaryHike,
+  desempeno=PerformanceRating, # no uso la ñ
+  vinculo=RelationshipSatisfaction,
+  horas=StandardHours,
+  ESO= StockOptionLevel, # (Employee Stock Option),
+  anios_trabajados=TotalWorkingYears,
+  entrenamientos_ly=TrainingTimesLastYear, 
+  bce_vida_trabajo= WorkLifeBalance,
+  antiguedad=YearsAtCompany,
+  antiguedad_puesto=YearsInCurrentRole,
+  antiguedad_ult_promocion= YearsSinceLastPromotion,
+  antiguedad_gte= YearsWithCurrManager
+  )
+```
+
+
+Veamos a explorar los tipos de variables.
+
+Por lo que vemos en el siguiente detalle, en este dataset  las variables no requieren una modificación del formato, en esta instancia. 
+
+```{r}
+str(d1)
+```
+
+Consultamos las respuestas del dataset y las modificamos para que sea de facil lectura.
+
+Variable: Viaje de trabajo. Armo una escala.
+
+```{r}
+d1%>%
+  select(viaje_negocio)%>%
+  group_by(viaje_negocio)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)
+
+# armo una escala
+
+#no - poco - frecuente
+
+d1<- d1 %>% 
+ mutate(viaje_negocio = fct_collapse(viaje_negocio,"Poco"= "Travel_Rarely",
+                                                     "Frecuente"="Travel_Frequently" ,
+                                                     "No"="Non-Travel"  ))
+
+d1%>%
+  select(viaje_negocio)%>%
+  group_by(viaje_negocio)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)
+
+```
+
+Variable: Departamento, simplifico los nombres.
+
+
+```{r}
+
+
+d1%>%
+  select(departamento)%>%
+  group_by(departamento)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)
+
+
+
+d1<- d1 %>% 
+ mutate(departamento = fct_collapse(departamento,  "R&D"="Research & Development" , 
+                                                   "HR"="Human Resources",
+                                                    "Ventas"= "Sales"))
+
+
+d1%>%
+  select(departamento)%>%
+  group_by(departamento)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)
+```
+
+Variable Genero.
+
+```{r}
+
+d1<- d1 %>% 
+ mutate(genero = fct_collapse(genero,  "Femenino"="Female" , 
+                                                   "Masculino"="Male",
+                                                    ))
+
+d1%>%
+  select(genero)%>%
+  group_by(genero)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)
+```
+
+variable Puesto
+
+```{r}
+d1%>%
+  select(puesto)%>%
+  group_by(puesto)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)
+
+
+
+
+d1<- d1 %>% 
+ mutate(puesto = fct_collapse(puesto,  "Vendedor"="Sales Executive" , 
+                                        "Investigador"="Research Scientist",
+                                        "Tec_laboratorio"="Laboratory Technician",
+                                        "Dir_Operativo"="Manufacturing Director",
+                                        "Atencion_cliente"="Healthcare Representative",
+                                        "Gerente"="Manedadr",
+                                        "Comercial"="Sales Representative",
+                                        "Director"="Research Director",
+                                        "HR"="Human Resources"))
+
+d1%>%
+  select(puesto)%>%
+  group_by(puesto)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)
+```
+
+
+
+
+
+
+
+
+Variable estado civil
+
+
+
+```{r}
+
+
+d1%>%
+  select(est_civil)%>%
+  group_by(est_civil)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)
+
+
+
+d1<- d1 %>% 
+ mutate(est_civil = fct_collapse(est_civil,  "Casadx"="Married" , 
+                                                   "Solterx"="Single",
+                                                    "Divorciadx"= "Divorced"))
+
+d1%>%
+  select(est_civil)%>%
+  group_by(est_civil)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)
+
+
+```
+
+
+Armamos grupos de edad.
+
+Primero consultamos las edades & cantidades, para armar las categorías:
+
+```{r}
+
+d1%>%
+  select(edad)%>%
+  group_by(edad)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)
+
+
+```
+
+En función de las cantidades previas, armamos las categorías adecuadas: 
+
+```{r}
+
+d1<-d1%>% 
+         mutate(edad_cat = case_when(
+                                edad > 17 & edad <= 25 ~ "18-25",
+                                edad > 25 & edad <= 35 ~ "26-35",
+                                edad > 35 & edad <= 46 ~ "36-45",
+                                edad > 45 & edad <= 50 ~ "46-50",
+                                edad > 50 & edad <= 64 ~ "51-64",        
+                                edad > 64             ~ "> 64"
+                                )) %>% 
+         mutate(edad_cat = factor(edad_cat,
+         level = c("18-25","26-35", "36-45","46-50","51-64","> 64")
+    )) 
+
+
+d1%>%
+  select(edad_cat)%>%
+  group_by(edad_cat)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)
+
+
+```
+
+Primera observación a las variables numericas.
+
+```{r}
+
+plot_num(d1)
+
+```
+
+Eliminamos las columnas que no vamos a usar en el análisis
+
+```{r}
+
+d1<- d1 %>% 
+  select(everything(),-cuenta_empleado,-horas,)
+
+```
+
+Veamos Cantidades de rotación y la representación porcentual. 
+
+```{r}
+
+d1%>%
+  select(rotacion)%>%
+  group_by(rotacion)%>%
+  rename("Rotación"="rotacion") %>% 
+  mutate(cuenta = 1) %>% 
+  summarise(Cantidad = sum(cuenta)) %>% 
+  arrange(-Cantidad) %>% 
+  mutate(Porcentaje = round(prop.table(Cantidad), 2)) %>% 
+  kable("html", escape=F) %>% 
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover","condensed" )) %>% 
+  row_spec(0, bold=T, color="white", background = azul) %>% 
+  footnote(general = fuente)
+
+
+
+```
+
+
+Podemos relacionar rotación y la educación.
+
+Primero veamos las cantidades para tener una referencia numerica
+
+```{r}
+summary(d1$especialidad) %>% 
+  kable("html", escape=F) %>% 
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover","condensed" )) %>% 
+  row_spec(0, bold=T, color="white", background = azul) %>% 
+  footnote(general = fuente)
+```
+
+Ahora relacionemos la especialidad  con la rotación.
+
+
+```{r}
+
+library(repr)
+options(repr.plot.width=10, repr.plot.height = 10) 
+
+
+ggplot(data = d1) + 
+  geom_bar(aes(x = especialidad ,   fill = rotacion)) +
+  #theme(axis.text.x = element_text(angle = 180)) + 
+  labs(x="Especialidad",y="Cantidad") +
+  #estilov +
+  scale_fill_manual(values = c(lila, verde)) +
+  #coord_flip() +
+  labs(title = "Educación & Rotación",
+       subtitle = "",
+       x = "" , fill = "",
+       caption = fuente)
+```
+
+
+De los que se fueron, podemos observar la relacion entre genero y campo de especialidad
+
+```{r}
+
+g1<-
+  d1 %>% 
+    select(rotacion,genero,especialidad) %>%
+    rename("Género"=genero) %>% 
+    filter (rotacion=="Yes") %>%
+    group_by(especialidad,Género) %>% 
+    summarise(Cantidad=n()) 
+
+  ggplot(data=g1,aes(x=especialidad,y = Cantidad ,color=Género ,fill=Género))+
+    geom_bar(stat="identity", position=position_dodge())+
+    scale_fill_manual(values = c(lila, verde)) +
+    ggtitle("Especialidad & Genero ")+
+  labs(x = "", y = "")
+  
+  
+```
 
 
