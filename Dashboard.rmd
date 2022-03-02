@@ -1,60 +1,28 @@
 ---
-title: "Dashboard"
-subtitle: ""
-author: "Yanel Paulette"
-date: "6/2/2022"
-output:
-  html_document:
-    theme: spacelab
-    toc: true
-    toc_float: true
-    code_folding: hide
-    code_download: true
+title: "Dashboard en R"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    theme: yeti
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE , warning = FALSE, message  = FALSE)
-```
-
-
-### Objetivos
-
-completar... 
-
-
-
-### Destinatarios
-
-
-conmpletar....
-
-El detalle procedimental utilizado en el presente documento, tiene como objetivo que pueda ser utilizado por quienes ya manejan programación en R, pero también  por quienes se están iniciando por ese camino. 
-
-
-### Procedimiento
-
-A continuación, comenzamos a explicar el paso a paso  para realizar la limpieza y organización de los datos, según los objetivos presentados. 
-
-Para comenzar, se deben realizar configuraciones iniciales, las cuales iremos detallando a continuación. 
-
-Incorporamos las librerias a utilizar.
-
-```{r }
+```{r setup, include=FALSE }
 
 library(tidyverse)      
-#library(googlesheets4)  
 library(gargle)         
-library(funModeling)    
+#library(funModeling)    
 library(kableExtra)
-#library(tm)
-#library(lubridate) 
-#library(datos)
-#library( hms)
-```
+library(plotly)
+library(patchwork)
+library(RColorBrewer)
+library(flexdashboard)
+library(extrafont)
+library(scales)
+#library(funModeling)
+library(ggalt)
 
-Creamos objetos que vamos a utlizar en diversas oportunidades y solo debemos invocarlos.
 
-```{r }
 
 azul <- "#344D7E"
 verde <-  "#4A9FC7"
@@ -83,63 +51,16 @@ estiloh <- theme(panel.grid = element_blank(),
 
 
 fuente <- "Fuente: Elaboración propia"
+
 ```
 
 
-Incorporamos las bases de datos a utilizar.
-
-```{r}
+```{r  include=FALSE}
 original <- read.csv("Data.csv", stringsAsFactors = TRUE)
-
-```
-
-
-Almacenamos los datos en  objeto para evitar usar la base original.
-
-```{r}
-#rm(d1)
 d1<- original
-
-```
-
-
-Demos un vistazo de lo que tenemos en el Dataframe.
-
-
-Usamos algunas funciones del paquete ´funmodeling´
-
-```{r}
-status(d1)
-
-```
-
-
-
-Con la función str, exploramos :
-
-
-```{recho=FALSE}
-str(original)
-```
-
-
-Comenzamos trabajando con los nombres de las columnas. Y consultamos los nombres de las mismas. 
-
-
-```{r}
 
 limpios <- make.names(colnames(d1))
 colnames(d1) <- limpios
-
-names(d1)
-
-```
-
-Cambiamos los nombres de las columnas, para que sean en castellano y sean más facil de interpretar.
-
-```{r}
-#rm(d1)
-
 d1 <- d1%>% 
   rename(
   edad=  "ï..Age",
@@ -178,29 +99,15 @@ d1 <- d1%>%
   antiguedad_ult_promocion= YearsSinceLastPromotion,
   antiguedad_gte= YearsWithCurrManager
   )
+
+d1<- d1 %>% 
+  select(everything(),-cuenta_empleado,-horas,)
 ```
 
+```{r  include=FALSE}
+#Limpieza de Variables: 
 
-Veamos a explorar los tipos de variables.
-
-Por lo que vemos en el siguiente detalle, en este dataset  las variables no requieren una modificación del formato, en esta instancia. 
-
-```{r}
-str(d1)
-```
-
-Consultamos las respuestas del dataset y las modificamos para que sea de facil lectura.
-
-Variable: Viaje de trabajo. Armo una escala.
-
-```{r}
-d1%>%
-  select(viaje_negocio)%>%
-  group_by(viaje_negocio)%>%
-  mutate(cuenta = 1) %>% 
-  summarise(Cuenta = sum(cuenta)) %>% 
-  arrange(-Cuenta)
-
+#1- V. Viaje
 # armo una escala
 
 #no - poco - frecuente
@@ -210,73 +117,21 @@ d1<- d1 %>%
                                                      "Frecuente"="Travel_Frequently" ,
                                                      "No"="Non-Travel"  ))
 
-d1%>%
-  select(viaje_negocio)%>%
-  group_by(viaje_negocio)%>%
-  mutate(cuenta = 1) %>% 
-  summarise(Cuenta = sum(cuenta)) %>% 
-  arrange(-Cuenta)
-
-```
-
-Variable: Departamento, simplifico los nombres.
-
-
-```{r}
-
-
-d1%>%
-  select(departamento)%>%
-  group_by(departamento)%>%
-  mutate(cuenta = 1) %>% 
-  summarise(Cuenta = sum(cuenta)) %>% 
-  arrange(-Cuenta)
-
-
+#2-V. Dpto 
 
 d1<- d1 %>% 
- mutate(departamento = fct_collapse(departamento,  "R&D"="Research & Development" , 
+ mutate(departamento = fct_collapse(departamento,  "I&D"="Research & Development" , 
                                                    "HR"="Human Resources",
                                                     "Ventas"= "Sales"))
 
-
-d1%>%
-  select(departamento)%>%
-  group_by(departamento)%>%
-  mutate(cuenta = 1) %>% 
-  summarise(Cuenta = sum(cuenta)) %>% 
-  arrange(-Cuenta)
-```
-
-Variable Genero.
-
-```{r}
+#3- V. Genero
 
 d1<- d1 %>% 
  mutate(genero = fct_collapse(genero,  "Femenino"="Female" , 
                                                    "Masculino"="Male",
                                                     ))
 
-d1%>%
-  select(genero)%>%
-  group_by(genero)%>%
-  mutate(cuenta = 1) %>% 
-  summarise(Cuenta = sum(cuenta)) %>% 
-  arrange(-Cuenta)
-```
-
-variable Puesto
-
-```{r}
-d1%>%
-  select(puesto)%>%
-  group_by(puesto)%>%
-  mutate(cuenta = 1) %>% 
-  summarise(Cuenta = sum(cuenta)) %>% 
-  arrange(-Cuenta)
-
-
-
+#5-V. Puesto
 
 d1<- d1 %>% 
  mutate(puesto = fct_collapse(puesto,  "Vendedor"="Sales Executive" , 
@@ -289,72 +144,14 @@ d1<- d1 %>%
                                         "Director"="Research Director",
                                         "HR"="Human Resources"))
 
-d1%>%
-  select(puesto)%>%
-  group_by(puesto)%>%
-  mutate(cuenta = 1) %>% 
-  summarise(Cuenta = sum(cuenta)) %>% 
-  arrange(-Cuenta)
-```
-
-
-
-
-
-
-
-
-Variable estado civil
-
-
-
-```{r}
-
-
-d1%>%
-  select(est_civil)%>%
-  group_by(est_civil)%>%
-  mutate(cuenta = 1) %>% 
-  summarise(Cuenta = sum(cuenta)) %>% 
-  arrange(-Cuenta)
-
-
+#6- V. Esta Civil
 
 d1<- d1 %>% 
  mutate(est_civil = fct_collapse(est_civil,  "Casadx"="Married" , 
                                                    "Solterx"="Single",
                                                     "Divorciadx"= "Divorced"))
 
-d1%>%
-  select(est_civil)%>%
-  group_by(est_civil)%>%
-  mutate(cuenta = 1) %>% 
-  summarise(Cuenta = sum(cuenta)) %>% 
-  arrange(-Cuenta)
-
-
-```
-
-
-Armamos grupos de edad.
-
-Primero consultamos las edades & cantidades, para armar las categorías:
-
-```{r}
-
-d1%>%
-  select(edad)%>%
-  group_by(edad)%>%
-  mutate(cuenta = 1) %>% 
-  summarise(Cuenta = sum(cuenta)) %>% 
-  arrange(-Cuenta)
-
-
-```
-
-En función de las cantidades previas, armamos las categorías adecuadas: 
-
-```{r}
+#7- V. Edad
 
 d1<-d1%>% 
          mutate(edad_cat = case_when(
@@ -370,91 +167,45 @@ d1<-d1%>%
     )) 
 
 
-d1%>%
-  select(edad_cat)%>%
-  group_by(edad_cat)%>%
-  mutate(cuenta = 1) %>% 
-  summarise(Cuenta = sum(cuenta)) %>% 
-  arrange(-Cuenta)
+#8- Especialidad
+d1<- d1 %>% 
+ mutate(especialidad = fct_collapse(especialidad,  "Ciencias"="Life Sciences" , 
+                                                   "Medicina"="Medical",                                                                                      "Mkt"="Marketing",                                                                                         "HR"="Human Resources",
+                                                   "Otros"="Other"
+                                                    ))
 
-
-```
-
-Primera observación a las variables numericas.
-
-```{r}
-
-plot_num(d1)
-
-```
-
-Eliminamos las columnas que no vamos a usar en el análisis
-
-```{r}
+#9- Rotacion
 
 d1<- d1 %>% 
-  select(everything(),-cuenta_empleado,-horas,)
+ mutate(rotacion = fct_collapse(rotacion,"Si"= "Yes"))
+
 
 ```
 
-Veamos Cantidades de rotación y la representación porcentual. 
+
+
+Especialidad
+======================================================================
+
+Column {data-width=650} {.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+###  Rotación
 
 ```{r}
+d1%>% 
+  rename(
+  Especialidad=  "especialidad")%>%
+  plot_ly(x = ~Especialidad, color  =~rotacion, colors = "Accent" )%>%
+  layout(yaxis = list(title = 'Cantidad'))
 
-d1%>%
-  select(rotacion)%>%
-  group_by(rotacion)%>%
-  rename("Rotación"="rotacion") %>% 
-  mutate(cuenta = 1) %>% 
-  summarise(Cantidad = sum(cuenta)) %>% 
-  arrange(-Cantidad) %>% 
-  mutate(Porcentaje = round(prop.table(Cantidad), 2)) %>% 
-  kable("html", escape=F) %>% 
-  kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover","condensed" )) %>% 
-  row_spec(0, bold=T, color="white", background = azul) %>% 
-  footnote(general = fuente)
 
 
 
 ```
 
 
-Podemos relacionar rotación y la educación.
-
-Primero veamos las cantidades para tener una referencia numerica
-
-```{r}
-summary(d1$especialidad) %>% 
-  kable("html", escape=F) %>% 
-  kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover","condensed" )) %>% 
-  row_spec(0, bold=T, color="white", background = azul) %>% 
-  footnote(general = fuente)
-```
-
-Ahora relacionemos la especialidad  con la rotación.
-
-
-```{r}
-
-library(repr)
-options(repr.plot.width=10, repr.plot.height = 10) 
-
-
-ggplot(data = d1) + 
-  geom_bar(aes(x = especialidad ,   fill = rotacion)) +
-  #theme(axis.text.x = element_text(angle = 180)) + 
-  labs(x="Especialidad",y="Cantidad") +
-  #estilov +
-  scale_fill_manual(values = c(lila, verde)) +
-  #coord_flip() +
-  labs(title = "Educación & Rotación",
-       subtitle = "",
-       x = "" , fill = "",
-       caption = fuente)
-```
-
-
-De los que se fueron, podemos observar la relacion entre genero y campo de especialidad
+###  Género
 
 ```{r}
 
@@ -462,17 +213,249 @@ g1<-
   d1 %>% 
     select(rotacion,genero,especialidad) %>%
     rename("Género"=genero) %>% 
-    filter (rotacion=="Yes") %>%
+    filter (rotacion=="Si") %>%
     group_by(especialidad,Género) %>% 
     summarise(Cantidad=n()) 
 
-  ggplot(data=g1,aes(x=especialidad,y = Cantidad ,color=Género ,fill=Género))+
+gender <- c("#8624F5", "#1FC3AA")
+
+ggplot(data=g1,aes(x=especialidad,y = Cantidad  ,fill=Género))+
     geom_bar(stat="identity", position=position_dodge())+
-    scale_fill_manual(values = c(lila, verde)) +
-    ggtitle("Especialidad & Genero ")+
+  scale_fill_manual(values = gender) +
+    ggtitle("Especialidad & Género ")+
   labs(x = "", y = "")
-  
-  
+
+
+```
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Rotación
+
+```{r}
+
+g7<-d1%>% 
+  select(rotacion)%>%
+  group_by(rotacion)%>%
+  summarise(counts = n()) %>%
+  mutate(prop = (counts / sum(counts)) * 100) %>%
+  arrange(desc(prop)) %>% 
+ggplot(aes("", counts)) +
+  geom_col(
+    position = "fill",
+    color = "black",
+    width = 1,
+    aes(fill = factor(rotacion))
+  ) +
+  geom_text(
+    aes(label = str_c(round(prop), "%"), group = factor(rotacion)),
+    position = position_fill(vjust = 0.5),
+    color = "white",
+    size = 6,
+    show.legend = FALSE,
+    fontface = "bold"
+  ) +
+  coord_polar(theta = "y") +
+  theme_void() +
+  scale_fill_manual (values = c(azul,verde)) +
+  theme_void() +
+  labs(
+    title = "Rotación ",
+    subtitle = "",
+    caption = "",
+    fill = ""
+  )
+
+g7
+```
+
+
+
+### Rotación 2
+
+```{r}
+g8<-d1%>% 
+  select(rotacion)%>%
+  group_by(rotacion)%>%
+  summarise(counts = n()) %>%
+  mutate(prop = (counts / sum(counts)) * 100) %>%
+  arrange(desc(prop))
+
+g8<-ggplot(g8, aes(x="", y=prop, fill=rotacion)) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  theme(legend.position="none") +
+  geom_text(aes(label = rotacion), color = "white", size=6)+
+  scale_fill_brewer(palette="Set2")
+
+g8
+
+```
+
+
+
+Ingresos
+======================================================================
+
+Column {data-width=650} {.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+
+###  Género
+```{r}
+
+ggplot(d1, aes(x=rotacion, y=sueldo, color=genero, fill=genero)) +
+    geom_boxplot()
+
+
+```
+
+
+Departamento
+======================================================================
+
+Column {data-width=650} {.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Departamento & Bajas
+
+```{r}
+
+g2<-d1%>% 
+  filter(rotacion=="Si")%>%
+  plot_ly(x = ~departamento, color  =~genero, colors = "Accent" )%>%
+  layout(yaxis = list(title = 'Cantidad'))
+
+g2
+```
+
+
+
+### Departamento & Activos 
+
+```{r}
+g3<-d1%>% 
+  filter(rotacion=="No")%>%
+  plot_ly(x = ~departamento, color  =~genero, colors = "Accent" )%>%
+  layout(yaxis = list(title = 'Cantidad'))
+
+g3
+
+```
+
+
+
+Horas Extras
+======================================================================
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+
+###  Sueldos
+```{r}
+
+g6<-ggplot(d1, aes(x=hs_extras, y=sueldo, color=genero, fill=genero)) +
+    geom_boxplot()
+g6
+
+
+```
+
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Bajas 
+
+```{r}
+
+g4<-d1 %>% 
+  select(hs_extras, sueldo, genero, rotacion) %>% 
+  filter(rotacion=="Si") %>% 
+  ggplot( aes(x=hs_extras, y=sueldo, color=genero, fill=genero)) +
+    geom_boxplot()+
+    labs(title='Bajas')
+
+g4
+```
+
+
+
+### Activos
+
+```{r}
+g5<-d1 %>% 
+  select(hs_extras, sueldo, genero, rotacion) %>% 
+  filter(rotacion=="No") %>% 
+  ggplot( aes(x=hs_extras, y=sueldo, color=genero, fill=genero)) +
+    geom_boxplot()+
+   labs(title='Activos')
+
+g5
+
+```
+
+Gap Salarial {data-orientation=rows}
+==========================================================
+
+Rows
+--------------------------------------------------------
+
+### Sueldo Promedio Mujeres & Bajas
+
+```{r}
+
+brecha <- d1 %>% 
+  select(sueldo, genero,rotacion) %>% 
+  filter(rotacion=="Si") %>% 
+  group_by(genero) %>% 
+  summarise(media_salarial = mean(sueldo))
+
+brecha_graf <- brecha %>% 
+  pivot_wider(., names_from = genero, values_from = media_salarial) %>% 
+  mutate(brecha = percent((Masculino-Femenino)/Masculino, 1),
+         x = (Masculino + Femenino)/2,
+         gap = Femenino/Masculino)
+
+# Calcular el indicador de brecha salarial 
+brecha_promedio <- round(mean(brecha_graf$gap*100))
+
+
+
+```
+
+```{r}
+### Sueldo Promedio Mujeres
+
+valueBox(round(mean(brecha_graf$Femenino)), icon = "fa-female", color = "#8624F5")
+
+```
+
+
+### Sueldo Promedio Hombres & Bajas
+
+```{r}
+### Sueldo Promedio Hombres
+valueBox(round(mean(brecha_graf$Masculino)), icon = "fa-male", color = "#1FC3AA")
+```
+
+
+Column 
+-----------------------------------------------
+
+```{r}
+
+d1%>% 
+  filter(rotacion=="Si") %>% 
+  rename( Género=  "genero")%>%
+  plot_ly(x = ~Género, color  =~rotacion, colors = "Accent" )#%>%
+ # layout(yaxis = list(title = ''))
+
 ```
 
 

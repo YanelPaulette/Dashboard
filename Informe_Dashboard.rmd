@@ -1,0 +1,914 @@
+---
+title: "Informe Dashboard"
+subtitle: "*Informe*"
+author: "**Yanel Paulette**"
+date: 'Año 2022'
+linkcolor: blue
+urlcolor: blue
+output:
+  html_document:
+    theme: spacelab
+    toc: true
+    toc_float: true
+    code_folding: show
+    code_download: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+
+```
+
+
+## Objetivos
+
+completar... 
+
+
+
+## Destinatarios
+
+
+Completar....
+
+El detalle procedimental utilizado en el presente documento, tiene como objetivo que pueda ser utilizado por quienes ya manejan programación en R, pero también  por quienes se están iniciando por ese camino. 
+
+
+## Procedimiento
+
+A continuación, comenzamos a explicar el paso a paso  para realizar la limpieza y organización de los datos, según los objetivos presentados. 
+
+Para comenzar, se deben realizar configuraciones iniciales, las cuales iremos detallando a continuación. 
+
+Incorporamos las librerias a utilizar.
+
+```{r }
+
+library(tidyverse)      
+#library(googlesheets4)  
+library(gargle)         
+library(funModeling)    
+library(kableExtra)
+library(plotly)
+library(patchwork)#superponer graficos
+library(RColorBrewer)
+
+#library(tm)
+#library(lubridate) 
+#library(datos)
+#library( hms)
+```
+
+Creamos objetos que vamos a utlizar en diversas oportunidades y solo debemos invocarlos.
+
+```{r }
+
+azul <- "#344D7E"
+verde <-  "#4A9FC7"
+gris <- "#75838F"
+rosa1 <- "#B95192"
+rosa2 <- "#EE5777"
+naranja <- "#FF764C"
+amarillo <- "#FFA600"
+gris <- "#75838F"
+lila <- "#755395"
+genero <- c("#8624F5", "#1FC3AA")
+
+
+# Estilo limpio con líneas de referencia verticales en gris claro
+estilov <- theme(panel.grid = element_blank(),
+                 plot.background = element_rect(fill = "#FBFCFC"),
+                 panel.background = element_blank(),
+                 panel.grid.major.x = element_line(color = "#AEB6BF"),
+                 text = element_text(family = "Roboto"))
+
+# Estilo limpio con líneas de referencia horizontales en gris claro
+estiloh <- theme(panel.grid = element_blank(),
+                 plot.background = element_rect(fill = "#FBFCFC"),
+                 panel.background = element_blank(),
+                 panel.grid.major.y = element_line(color = "#AEB6BF"),
+                 text = element_text(family = "Roboto"))
+
+
+# Creo objetos para formatear las etiquetas numéricas de los ejes x e y
+eje_x_n <- scale_x_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))
+
+eje_y_n <- scale_y_continuous(labels = comma_format(big.mark = ".", decimal.mark = ","))
+
+
+
+
+fuente <- "Fuente: Elaboración propia"
+```
+
+
+Incorporamos las bases de datos a utilizar.
+
+```{r}
+original <- read.csv("Data.csv", stringsAsFactors = TRUE)
+
+```
+
+
+Almacenamos los datos en  objeto para evitar usar la base original.
+
+```{r}
+#rm(d1)
+d1<- original
+
+```
+
+
+Demos un vistazo de lo que tenemos en el Dataframe:
+
+
+```{r}
+#status(d1)
+
+```
+
+Comenzamos trabajando con los nombres de las columnas. Y consultamos los nombres de las mismas. 
+
+
+```{r}
+
+limpios <- make.names(colnames(d1))
+colnames(d1) <- limpios
+
+#names(d1)
+
+```
+
+Cambiamos los nombres de las columnas, para que sean en castellano y sean más facil de interpretar.
+
+```{r}
+#rm(d1)
+
+d1 <- d1%>% 
+  rename(
+  edad=  "ï..Age",
+  rotacion= "Attrition",
+  viaje_negocio="BusinessTravel",
+  tasa_diaria="DailyRate", 
+  departamento=Department,
+  distancia=DistanceFromHome,
+  educacion=Education,
+  especialidad=EducationField,
+  cuenta_empleado=EmployeeCount,
+  dotacion=EmployeeNumber,
+  clima=EnvironmentSatisfaction,
+  genero=Gender,
+  tasa_horaria=HourlyRate, 
+  participacion=JobInvolvement,
+  jerarquia=JobLevel,
+  puesto=JobRole,
+  satisfaccion=JobSatisfaction,
+  est_civil=MaritalStatus,
+  sueldo=MonthlyIncome,
+  tasa_sueldo=MonthlyRate,
+  companias_trabajadas=NumCompaniesWorked,
+  mayor_18=Over18,
+  hs_extras=OverTime,
+  aumento_porcentual= PercentSalaryHike,
+  desempeno=PerformanceRating, # no uso la ñ
+  vinculo=RelationshipSatisfaction,
+  horas=StandardHours,
+  ESO= StockOptionLevel, # (Employee Stock Option),
+  anios_trabajados=TotalWorkingYears,
+  entrenamientos_ly=TrainingTimesLastYear, 
+  bce_vida_trabajo= WorkLifeBalance,
+  antiguedad=YearsAtCompany,
+  antiguedad_puesto=YearsInCurrentRole,
+  antiguedad_ult_promocion= YearsSinceLastPromotion,
+  antiguedad_gte= YearsWithCurrManager
+  )
+```
+
+
+## Variables
+
+Vamos  a explorar los tipos de variables.
+
+Volvemos a revisar nuestra base y verificamos que las variables no requieren una modificación del formato, en esta instancia. 
+
+```{r }
+#str(d1)
+```
+
+Primera observación a las variables numericas.
+Sin realizar mucho análisis, podemos conocer el estado de las variables númericas, para tener una referencia inicial, seleccionando las variables a trabajar. 
+
+
+Eliminamos las columnas que no vamos a usar en el análisis
+
+```{r}
+
+d1<- d1 %>% 
+  select(everything(),-cuenta_empleado,-horas,)
+
+```
+
+```{r}
+
+plot_num(d1)
+
+```
+
+
+Vamos a explorar  las diferentes variables.
+
+
+
+### Rotacion
+
+Edito las observaciones en ingles
+
+```{r}
+
+
+d1<- d1 %>% 
+ mutate(rotacion = fct_collapse(rotacion,"Si"= "Yes"))
+
+
+```
+
+
+### Viaje de trabajo
+
+
+Armo una escala para facilitar su interpretación.
+
+```{r}
+
+# armo una escala
+
+#no - poco - frecuente
+
+d1<- d1 %>% 
+ mutate(viaje_negocio = fct_collapse(viaje_negocio,"Poco"= "Travel_Rarely",
+                                                     "Frecuente"="Travel_Frequently" ,
+                                                     "No"="Non-Travel"  ))
+
+
+```
+1° Visualización
+
+```{r}
+d1%>%
+  select(viaje_negocio)%>%
+  group_by(viaje_negocio)%>%
+  mutate(cuenta = 1) %>% 
+  rename("Viaje de Negocio"= "viaje_negocio")%>% 
+  summarise(Cantidad = sum(cuenta)) %>% 
+  arrange(-Cantidad)
+
+```
+
+
+2° Visualización
+
+```{r}
+d1%>%
+  select(viaje_negocio)%>%
+  group_by(viaje_negocio)%>%
+  mutate(cuenta = 1) %>% 
+  rename("Viaje de Negocio"= "viaje_negocio")%>% 
+  summarise(Cantidad = sum(cuenta)) %>% 
+  arrange(-Cantidad)%>%
+  kable("html", escape=F) %>% 
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover","condensed" )) %>% 
+  row_spec(0, bold=T, color="white", background = azul) %>% 
+  footnote(general = fuente)
+
+```
+
+
+
+### Departamento
+
+Simplifico los nombres.
+
+
+```{r}
+
+d1<- d1 %>% 
+ mutate(departamento = fct_collapse(departamento,  "R&D"="Research & Development" , 
+                                                   "HR"="Human Resources",
+                                                    "Ventas"= "Sales"))
+
+
+d1%>%
+  select(departamento)%>%
+  group_by(departamento)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)%>%
+  kable("html", escape=F) %>% 
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover","condensed" )) %>% 
+  row_spec(0, bold=T, color="white", background = azul) %>% 
+  footnote(general = fuente)
+```
+
+### Género
+
+```{r}
+
+d1<- d1 %>% 
+ mutate(genero = fct_collapse(genero,  "Femenino"="Female" , 
+                                                   "Masculino"="Male",
+                                                    ))
+
+d1%>%
+  select(genero)%>%
+  group_by(genero)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)%>%
+  kable("html", escape=F) %>% 
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover","condensed" )) %>% 
+  row_spec(0, bold=T, color="white", background = azul) %>% 
+  footnote(general = fuente)
+```
+
+```{r}
+div <- d1 %>% 
+select(genero) %>% 
+  mutate(genero = factor(genero, 
+                         levels = c("Femenino", "Masculino"))) %>% 
+  group_by(genero) %>% 
+  summarise (n = n()) %>% 
+  mutate(freq = n/sum(n)) %>% 
+  arrange(-n)
+
+# Compute the cumulative percentages (top of each rectangle)
+div$ymax <- cumsum(div$freq)
+
+# Compute the bottom of each rectangle
+div$ymin <- c(0, head(div$ymax, n=-1))
+
+# Compute label position
+div$labelPosition <- (div$ymax + div$ymin) / 2
+
+# Compute a good label
+div$label <- paste0(div$genero, "\n Cant: ", div$n)
+
+# Make the plot
+ggplot(div, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=genero)) +
+  geom_rect() +
+  coord_polar(theta="y") + # Try to remove that to understand how the chart is built initially
+  xlim(c(2, 4)) +# Try to remove that to see how to make a pie chart
+  scale_fill_manual(values = c("#8624F5",  "#1FC3AA", "#FFD129","#75838F")) +
+  theme_void() +
+  theme(legend.position = "right",
+        panel.background = element_blank(),
+        text = element_text(family = "Roboto")) +
+  labs(title = "Género",
+       fill = "Género", 
+       caption = fuente)
+```
+
+
+
+
+### Puesto
+
+```{r}
+
+d1<- d1 %>% 
+ mutate(puesto = fct_collapse(puesto,  "Vendedor"="Sales Executive" ,
+                                       "Atencion_cliente"="Sales Executive" , 
+                                        "Investigador"="Research Scientist",
+                                        "Tec_laboratorio"="Laboratory Technician",
+                                        "Dir_Operativo"="Manufacturing Director",
+                                        "Representante"="Healthcare Representative",
+                                        "Gerente"="Manedadr",
+                                        "Comercial"="Sales Representative",
+                                        "Director"="Research Director",
+                                        "HR"="Human Resources"))
+
+d1<- d1 %>% 
+  mutate(puesto = factor(puesto, levels = c("Atencion_cliente", "Vendedor","Comercial","Representante", "HR",
+                                            "Tec_laboratorio", "Investigador","Gerente",
+                                            "Dir_Operativo", "Director")))
+                         
+
+d1%>%
+  select(puesto)%>%
+  group_by(puesto)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)%>%
+  kable("html", escape=F) %>% 
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover","condensed" )) %>% 
+  row_spec(0, bold=T, color="white", background = azul) %>% 
+  footnote(general = fuente)
+```
+
+
+
+### Estado civil
+
+
+
+```{r}
+
+
+d1<- d1 %>% 
+ mutate(est_civil = fct_collapse(est_civil,  "Casadx"="Married" , 
+                                                   "Solterx"="Single",
+                                                    "Divorciadx"= "Divorced"))
+
+d1%>%
+  select(est_civil)%>%
+  group_by(est_civil)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)%>%
+  kable("html", escape=F) %>% 
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover","condensed" )) %>% 
+  row_spec(0, bold=T, color="white", background = azul) %>% 
+  footnote(general = fuente)
+
+
+```
+
+### Edad
+
+Armamos grupos de edad
+
+Primero consultamos las edades para armar las categorías:
+
+```{r}
+
+d1%>%
+  select(edad)%>%
+  group_by(edad)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)
+
+
+```
+
+En función de las cantidades previas, armamos las categorías adecuadas: 
+
+```{r}
+
+d1<-d1%>% 
+         mutate(edad_cat = case_when(
+                                edad > 17 & edad <= 25 ~ "18-25",
+                                edad > 25 & edad <= 35 ~ "26-35",
+                                edad > 35 & edad <= 46 ~ "36-45",
+                                edad > 45 & edad <= 50 ~ "46-50",
+                                edad > 50 & edad <= 64 ~ "51-64",        
+                                edad > 64             ~ "> 64"
+                                )) %>% 
+         mutate(edad_cat = factor(edad_cat,
+         level = c("18-25","26-35", "36-45","46-50","51-64","> 64")
+    )) 
+
+
+d1%>%
+  select(edad_cat)%>%
+  group_by(edad_cat)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)%>%
+  kable("html", escape=F) %>% 
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover","condensed" )) %>% 
+  row_spec(0, bold=T, color="white", background = azul) %>% 
+  footnote(general = fuente)
+
+
+```
+
+### Especialidad
+
+
+```{r}
+d1%>%
+  select(especialidad)%>%
+  group_by(especialidad)%>%
+  mutate(cuenta = 1) %>% 
+  summarise(Cuenta = sum(cuenta)) %>% 
+  arrange(-Cuenta)
+
+
+d1<- d1 %>% 
+ mutate(especialidad = fct_collapse(especialidad,  "Ciencias"="Life Sciences" , 
+                                                   "Medicina"="Medical",                                                                                       "Mkt"="Marketing",                                                                                          "HR"="Human Resources",
+                                                   "Otros"="Other"
+                                                    ))
+
+```
+### Antiguedad
+
+
+Armo categorias para la antiguedad
+
+```{r}
+d1%>%
+  select(rotacion,  antiguedad, antiguedad_puesto)%>%
+  filter(rotacion=="Si") %>% 
+  group_by(antiguedad)%>%
+  mutate(cuenta = 1) %>% 
+  rename("Antiguedad"= "antiguedad")%>% 
+  summarise(Cantidad = sum(cuenta)) %>% 
+  arrange(Antiguedad)
+
+
+d1<-d1%>% 
+         mutate(ant_cat = case_when(
+                                antiguedad > -1 & antiguedad < 1 ~ "Menor 1",
+
+                                antiguedad >= 1 & antiguedad <= 2 ~ "1-2",
+                                antiguedad > 2 & antiguedad <= 4 ~ "3-4",
+                                antiguedad > 4 & antiguedad <= 6 ~ "5-6",
+                                antiguedad > 6 & antiguedad <= 8 ~ "7-8",
+                                antiguedad > 8             ~ "> 8"
+                                )) %>% 
+         mutate(ant_cat = factor(ant_cat,
+         level = c("Menor 1","1-2","3-4","5-6","7-8","> 8"))) 
+
+```
+
+Armo categorias para la antiguedad en el puesto 
+
+
+```{r}
+d1%>%
+  select(rotacion,  antiguedad, antiguedad_puesto)%>%
+  filter(rotacion=="Si") %>% 
+  group_by(antiguedad_puesto)%>%
+  mutate(cuenta = 1) %>% 
+  rename("Antiguedad en el puesto"= "antiguedad_puesto")%>% 
+  summarise(Cantidad = sum(cuenta)) %>% 
+  arrange("Antiguedad en el puesto")
+
+d1<-d1%>% 
+         mutate(antPuesto_cat = case_when(
+                                antiguedad_puesto > -1 & antiguedad_puesto < 1 ~ "Menor 1",
+                                antiguedad_puesto >= 1 & antiguedad_puesto <= 3 ~ "1-3",
+                                antiguedad_puesto > 3 & antiguedad_puesto <= 5 ~ "4-5",
+                                antiguedad_puesto > 5 & antiguedad_puesto <= 7 ~ "6-7",
+                                antiguedad_puesto >7 & antiguedad_puesto <= 9 ~ "8-9",
+
+                                antiguedad_puesto > 9             ~ "> 9"
+                                )) %>% 
+         mutate(antPuesto_cat = factor(antPuesto_cat,
+         level = c("Menor 1","1-3", "4-5","6-7","8-9","> 9")
+    )) 
+
+```
+
+
+
+
+## Relaciones
+
+
+Empecemos viendo la representación porcentual de rotación. 
+
+Podemos visualizarlo en una tabla: 
+
+
+```{r}
+
+d1%>%
+  select(rotacion)%>%
+  group_by(rotacion)%>%
+  rename("Rotación"="rotacion") %>% 
+  mutate(cuenta = 1) %>% 
+  summarise(Cantidad = sum(cuenta)) %>% 
+  arrange(-Cantidad) %>% 
+  mutate(Porcentaje = round(prop.table(Cantidad), 2)) %>% 
+  kable("html", escape=F) %>% 
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover","condensed" )) %>% 
+  row_spec(0, bold=T, color="white", background = azul) %>% 
+  footnote(general = fuente)
+
+
+
+```
+
+En un pie chart, ya sea incluyendo cantidades o solo una referencia visual: 
+
+
+```{r}
+g7<-d1%>% 
+  select(rotacion)%>%
+  group_by(rotacion)%>%
+  summarise(counts = n()) %>%
+  mutate(prop = (counts / sum(counts)) * 100) %>%
+  arrange(desc(prop)) %>% 
+ggplot(aes("", counts)) +
+  geom_col(
+    position = "fill",
+    color = "black",
+    width = 1,
+    aes(fill = factor(rotacion))
+  ) +
+  geom_text(
+    aes(label = str_c(round(prop), "%"), group = factor(rotacion)),
+    position = position_fill(vjust = 0.5),
+    color = "white",
+    size = 6,
+    show.legend = FALSE,
+    fontface = "bold"
+  ) +
+  coord_polar(theta = "y") +
+  theme_void() +
+  scale_fill_manual (values = c(azul,verde)) +
+  theme_void() +
+  labs(
+    title = "Rotación ",
+    subtitle = "",
+    caption = "",
+    fill = ""
+  )
+
+```
+
+
+```{r}
+
+
+g8<-d1%>% 
+  select(rotacion)%>%
+  group_by(rotacion)%>%
+  summarise(counts = n()) %>%
+  mutate(prop = (counts / sum(counts)) * 100) %>%
+  arrange(desc(prop))
+
+g8<-ggplot(g8, aes(x="", y=prop, fill=rotacion)) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  theme(legend.position="none") +
+  geom_text(aes(label = rotacion), color = "white", size=6)+
+  scale_fill_brewer(palette="Set2")
+
+
+
+
+```
+
+
+```{r}
+g7
+g8
+```
+
+
+### Especialidad  & Rotación 
+
+
+Ahora relacionemos la especialidad  con la rotación.
+
+
+```{r}
+
+d1%>% 
+  rename(
+  Especialidad=  "especialidad")%>%
+  plot_ly(x = ~Especialidad, color  =~rotacion, colors = "Accent" )%>%
+  layout(yaxis = list(title = 'Cantidad'))
+
+```
+
+
+
+### Genero & Especialidad 
+
+De los que se fueron, podemos observar la relación entre género y campo de especialidad
+
+```{r}
+
+g1<-
+  d1 %>% 
+    select(rotacion,genero,especialidad) %>%
+    rename("Género"=genero) %>% 
+    filter (rotacion=="Si") %>%
+    group_by(especialidad,Género) %>% 
+    summarise(Cantidad=n()) 
+
+  ggplot(data=g1,aes(x=especialidad,y = Cantidad ,fill=Género))+
+    geom_bar(stat="identity", position=position_dodge())+
+  scale_fill_manual(values = c(azul, verde)) +
+    ggtitle("Especialidad & Genero ")+
+  labs(x = "", y = "")
+  
+  
+  
+```
+
+### Ingresos vs Rotación
+
+Veamos la relación entre ingresos y rotación.
+
+Mediante la siguiente tabla analizamos los valores estandar.
+
+```{r}
+
+d1%>% 
+  summarise(Mediana = median(sueldo), 
+              Promedio = mean(sueldo),
+              Max = max(sueldo), 
+              Min = min(sueldo)) %>% 
+  kable("html", escape=F) %>% 
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover","condensed" )) %>% 
+  row_spec(0, bold=T, color="white", background = azul)
+```
+
+Nos interesa relacionar genero, ingresos y rotacion. 
+
+Como vemos en el siguiente grafico, quienes se fueron de la empresa, es similar el sueldo, al igual que la cantidad de personas. La mayoria de los outliers se presenta en el género masculino. 
+
+De los que  se encuentran activos, los sueldos más altos los tienen las mujeres. 
+
+```{r}
+
+ggplot(d1, aes(x=rotacion, y=sueldo, color=genero, fill=genero)) +
+    geom_boxplot()
+
+```
+
+
+```{r}
+
+g2<-d1%>% 
+  filter(rotacion=="Si")%>%
+  plot_ly(x = ~departamento, color  =~genero, colors = "Accent" )%>%
+  layout(yaxis = list(title = 'Cantidad'))
+
+g3<-d1%>% 
+  filter(rotacion=="No")%>%
+  plot_ly(x = ~departamento, color  =~genero, colors = "Accent" )%>%
+  layout(yaxis = list(title = 'Cantidad'))
+
+g2
+g3
+```
+
+¿Hay alguna relacion entre las personas que se fueron y los que hicieron horas extras?
+
+
+Primero veamos un cuadro general entre Genero, horas extras y sueldo.
+
+Vemos que las mujeres con sueldo mas alto, son quienes hacen horas extras, en cambio entre los hombres, hagan o no horas extras el sueldo es similar. 
+
+```{r}
+
+g6<-ggplot(d1, aes(x=hs_extras, y=sueldo, color=genero, fill=genero)) +
+    geom_boxplot()
+
+g6
+
+```
+
+Veamos ahora como impacta las horas extras extre las personas que se van de la compañia: 
+```{r}
+
+g4<-d1 %>% 
+  select(hs_extras, sueldo, genero, rotacion) %>% 
+  filter(rotacion=="Si") %>% 
+  ggplot( aes(x=hs_extras, y=sueldo, color=genero, fill=genero)) +
+    geom_boxplot()+
+    labs(title='Bajas')
+
+
+g5<-d1 %>% 
+  select(hs_extras, sueldo, genero, rotacion) %>% 
+  filter(rotacion=="No") %>% 
+  ggplot( aes(x=hs_extras, y=sueldo, color=genero, fill=genero)) +
+    geom_boxplot()+
+   labs(title='Activos')
+
+g4
+g5
+
+```
+
+
+Podemos observar que los sueldos promedio de quienes se van de la compañia no tienen diferencias por genero. 
+
+```{r}
+
+ d1 %>% 
+  select(puesto, sueldo, genero,rotacion) %>% 
+  filter(rotacion=="Si") %>% 
+  group_by(genero) %>% 
+  summarise(media_salarial = mean(sueldo)) %>% 
+  kable("html", escape=F) %>% 
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover","condensed" )) %>% 
+  row_spec(0, bold=T, color="white", background = azul) %>% 
+  footnote(general = fuente)
+```
+
+
+```{r}
+
+## Solo se reproduce en el dashboard 
+#brecha <- d1 %>% 
+#  select(puesto, sueldo, genero,rotacion) %>% 
+#  filter(rotacion=="Si") %>% 
+#  group_by(genero) %>% 
+#  summarise(media_salarial = mean(sueldo))
+
+#brecha_graf <- brecha %>% 
+#  pivot_wider(., names_from = genero, values_from = media_salarial) %>% 
+#  mutate(brecha = percent((Masculino-Femenino)/Masculino, 1),
+#         x = (Masculino + Femenino)/2,
+#         gap = Femenino/Masculino)
+
+# Calcular el indicador de brecha salarial 
+#brecha_promedio <- round(mean(brecha_graf$gap*100))
+
+### Sueldo Promedio Mujeres
+
+#(round(mean(brecha_graf$Femenino)), icon = "fa-female", color = "#8624F5")
+
+### Sueldo Promedio Hombres
+#valueBox(round(mean(brecha_graf$Masculino)), icon = "fa-male", color = "#1FC3AA")
+
+```
+
+Y si bien, los sueldos promedios son casi identicos, observamos que la cantidad de personas no activas de cada genero varia en forma considerable. 
+```{r}
+d1 %>% 
+    select(rotacion,genero) %>%
+    filter (rotacion=="Si") %>%
+    group_by(genero) %>% 
+    summarise(Cantidad=n()) 
+
+
+
+
+```
+
+Podemos observar la misma información con la siguiente visualización
+
+
+```{r}
+
+d1%>% 
+  filter(rotacion=="Si") %>% 
+  rename( Género=  "genero")%>%
+  plot_ly(x = ~Género, color  =~rotacion, colors = "Accent" )%>%
+  layout(yaxis = list(title = 'Cantidad'))
+
+```
+
+
+### Posicion vs Rotación
+
+Veamos que sucede con el puesto y la rotacion. 
+Vemos que en la mayoria de las posiciones hay cierta equivalencia de sueldos entre generos, salvo en tres posiciones. 
+
+```{r}
+
+d1 %>% 
+  select(rotacion,puesto,genero,  sueldo, antiguedad,antiguedad_puesto) %>% 
+  filter(puesto!="NA") %>% 
+  filter(rotacion=="Si") %>% 
+  group_by(puesto, genero) %>% 
+  summarise(media_sueldo = mean(sueldo),
+            respuestas = n()) %>% 
+  arrange(-media_sueldo) %>% 
+  ggplot(aes(x = media_sueldo, y = reorder(puesto, media_sueldo), fill = genero)) +
+  geom_col(position = "dodge") +
+  geom_text(aes(label = round(x=media_sueldo,0), hjust = 1.4, vjust = 0.3),
+            size = 3, color = "white", position = position_dodge(width = .9)) +
+  scale_fill_manual(values = genero) +
+  labs(title = "Promedio salarial por puesto y género",
+       subtitle = "Datos de Argentina - en AR$",
+       x = "", y = "", fill = "Género",
+       caption = fuente) +
+  eje_x_n +
+  estilov +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+```
+
+Vamos a trabajar con las posiciones con sueldos mas altOS y ver  si tiene alguna relacion con la antiguedad en el trabajo
+
+
+```{r}
+rm(g9)
+g9<- d1 %>% 
+  select(rotacion,genero,puesto, sueldo, antiguedad,ant_cat) %>% 
+  filter(puesto!="NA") %>% 
+  filter(rotacion=="Si") %>% 
+  group_by(ant_cat,puesto ) %>% 
+  summarise(media_sueldo = mean(sueldo),
+            respuestas = n()) %>% 
+  arrange(-media_sueldo) %>% 
+  filter(media_sueldo>6658.640)
+
+
+g9 %>% 
+    kable("html", escape=F) %>% 
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover","condensed" )) %>% 
+  row_spec(0, bold=T, color="white", background = azul)
+```
